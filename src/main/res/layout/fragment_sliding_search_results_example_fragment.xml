@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                                 xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+                                                 android:layout_width="match_parent"
+                                                 android:layout_height="match_parent"
+                                                 android:background="#d9d9d9">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:app="http://schemas.android.com/apk/res-auto"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:id="@+id/parent_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fitsSystemWindows="true"
+                    tools:context=".MainActivity">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/search_results_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:paddingTop="60dp"
+            android:clipToPadding="false"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
+
+
+        <com.arlib.floatingsearchview.FloatingSearchView
+            android:id="@+id/floating_search_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:floatingSearch_dismissOnOutsideTouch="true"
+            app:floatingSearch_leftActionMode="showHamburger"
+            app:floatingSearch_menu="@menu/menu_search_view"
+            app:floatingSearch_searchBarMarginLeft="@dimen/search_view_inset"
+            app:floatingSearch_searchBarMarginRight="@dimen/search_view_inset"
+            app:floatingSearch_searchBarMarginTop="@dimen/search_view_inset"
+            app:floatingSearch_searchHint="Search..."
+            app:floatingSearch_showSearchKey="true"
+            app:floatingSearch_suggestionsListAnimDuration="250"
+            app:floatingSearch_dimBackground="false"
+            app:floatingSearch_close_search_on_keyboard_dismiss="false"
+            android:layout_alignParentTop="true"
+            android:layout_alignLeft="@+id/search_results_list"
+            android:layout_alignStart="@+id/search_results_list">
+
+
+        </com.arlib.floatingsearchview.FloatingSearchView>
+
+        <EditText
+            android:id="@+id/editText_put_product"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:layout_gravity="bottom"
+            android:layout_alignParentBottom="true"
+            android:text="Name"
+            android:ems="10"
+            tools:ignore="HardcodedText"
+            android:layout_toLeftOf="@+id/button_add_product"
+            android:layout_alignTop="@+id/button_add_product"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
+
+        <Button
+            android:id="@+id/button_add_product"
+            android:layout_gravity="bottom"
+            android:text="Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+</android.support.design.widget.CoordinatorLayout>
