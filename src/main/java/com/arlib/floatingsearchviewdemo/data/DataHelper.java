@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DataHelper {
 
@@ -39,11 +41,13 @@ public class DataHelper {
 
     private static List<Product> sColorSuggestions =
             new ArrayList<>(Arrays.asList(
-                    new Product("green","NEO IS ONE"),
-                    new Product("blue","NEO IS ONE"),
-                    new Product("pink","NEO IS ONE"),
-                    new Product("purple","NEO IS ONE"),
-                    new Product("brown","NEO IS ONE")));
+
+
+                    new Product("green"),
+                    new Product("blue"),
+                    new Product("pink"),
+                    new Product("purple"),
+                    new Product("brown")));
 
     public interface OnFindColorsListener {
         void onResults(List<ColorWrapper> results);

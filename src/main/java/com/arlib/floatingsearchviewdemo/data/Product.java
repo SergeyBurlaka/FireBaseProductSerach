@@ -1,10 +1,12 @@
 package com.arlib.floatingsearchviewdemo.data;
 
 import android.os.Parcel;
+import android.util.Log;
 
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Created by Operator on 25.01.2017.
@@ -12,17 +14,27 @@ import java.util.Map;
 
 public class Product implements SearchSuggestion, Comparable<Product> {
 
-    private Map<String, Object> keyName;
+    private Map<String, Object> keyWordsList;
     private String productName;
     private String productKey;
+
+    private Boolean confirmed = true;
 
 
 
     private boolean mIsHistory = false;
+    public static String PRODUCT_SEARCH_TAG = "ProductSearch";
 
-    public Product(String suggestion, String productKey) {
+    public Product(String suggestion, String productKey, Map<String, Object> keyWordsList) {
         this.productKey = productKey;
         this.productName = suggestion.toLowerCase();
+        this.keyWordsList = keyWordsList;
+    }
+
+    public Product(String suggestion) {
+
+        this.productName = suggestion.toLowerCase();
+
     }
 
     public Product(Parcel source) {
@@ -33,6 +45,24 @@ public class Product implements SearchSuggestion, Comparable<Product> {
 
     public Product(){
     }
+
+
+    public boolean isNameValid (String userKeyName){
+
+        for (String productKeyName : keyWordsList.keySet())
+        {
+            /*Log.d(PRODUCT_SEARCH_TAG, "isNameValid: "
+                    + " searchKeyName -> "+productKeyName
+                    + " userKeyName -> "+ userKeyName
+                    + " is contain -> " + Pattern.compile(Pattern.quote(userKeyName), Pattern.CASE_INSENSITIVE).matcher(productKeyName).find()
+            );*/
+            if(Pattern.compile(Pattern.quote(userKeyName), Pattern.CASE_INSENSITIVE).matcher(productKeyName).find()) return true;
+        }
+
+        return false;
+    }
+
+
 
     public static final Creator<Product> CREATOR = new Creator<Product>() {
         @Override
@@ -47,12 +77,12 @@ public class Product implements SearchSuggestion, Comparable<Product> {
     };
 
 
-    public Map<String, Object> getKeyName() {
-        return keyName;
+    public Map<String, Object> getKeyWordsList() {
+        return keyWordsList;
     }
 
-    public void setKeyName(Map<String, Object> keyName) {
-        this.keyName = keyName;
+    public void setKeyWordsList(Map<String, Object> keyWordsList) {
+        this.keyWordsList = keyWordsList;
     }
 
     public String getProductName() {
@@ -98,5 +128,13 @@ public class Product implements SearchSuggestion, Comparable<Product> {
 
     public void setProductKey(String productKey) {
         this.productKey = productKey;
+    }
+
+    public Boolean getConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(Boolean confirmed) {
+        this.confirmed = confirmed;
     }
 }
