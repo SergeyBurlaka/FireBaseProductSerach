@@ -20,8 +20,6 @@ import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.arlib.floatingsearchview.util.Util;
 import com.arlib.floatingsearchviewdemo.R;
-import com.arlib.floatingsearchviewdemo.data.ColorWrapper;
-import com.arlib.floatingsearchviewdemo.data.DataHelper;
 import com.arlib.floatingsearchviewdemo.data.Product;
 
 import java.util.List;
@@ -79,7 +77,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
 
                     //simulates a query call to a data source
                     //with a new query.
-                    DataHelper.findSuggestions(getActivity(), newQuery, 5,
+                    /*DataHelper.findSuggestions(getActivity(), newQuery, 5,
                             FIND_SUGGESTION_SIMULATED_DELAY, new DataHelper.OnFindSuggestionsListener() {
 
                                 @Override
@@ -93,7 +91,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
                                     //process has completed
                                     mSearchView.hideProgress();
                                 }
-                            });
+                            });*/
                 }
 
                 Log.d(TAG, "onSearchTextChanged()");
@@ -105,7 +103,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
             public void onSuggestionClicked(final SearchSuggestion searchSuggestion) {
 
                 Product colorSuggestion = (Product) searchSuggestion;
-                DataHelper.findColors(getActivity(), colorSuggestion.getBody(),
+                /*DataHelper.findColors(getActivity(), colorSuggestion.getBody(),
                         new DataHelper.OnFindColorsListener() {
 
                             @Override
@@ -113,7 +111,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
                                 //show search results
                             }
 
-                        });
+                        });*/
                 Log.d(TAG, "onSuggestionClicked()");
 
                 mLastQuery = searchSuggestion.getBody();
@@ -123,7 +121,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
             public void onSearchAction(String query) {
                 mLastQuery = query;
 
-                DataHelper.findColors(getActivity(), query,
+                /*DataHelper.findColors(getActivity(), query,
                         new DataHelper.OnFindColorsListener() {
 
                             @Override
@@ -131,7 +129,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
                                  //show search results
                             }
 
-                        });
+                        });*/
                 Log.d(TAG, "onSearchAction()");
             }
         });
@@ -141,7 +139,7 @@ public class ScrollingSearchExampleFragment extends BaseExampleFragment implemen
             public void onFocus() {
 
                 //show suggestions when search bar gains focus (typically history suggestions)
-                mSearchView.swapSuggestions(DataHelper.getHistory(getActivity(), 3));
+                //mSearchView.swapSuggestions(DataHelper.getHistory(getActivity(), 3));
 
                 Log.d(TAG, "onFocus()");
             }

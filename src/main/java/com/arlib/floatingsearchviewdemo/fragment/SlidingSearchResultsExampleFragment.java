@@ -22,10 +22,8 @@ import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.arlib.floatingsearchview.util.Util;
+
 import com.arlib.floatingsearchviewdemo.R;
-import com.arlib.floatingsearchviewdemo.adapter.SearchResultsListAdapter;
-import com.arlib.floatingsearchviewdemo.data.ColorWrapper;
-import com.arlib.floatingsearchviewdemo.data.DataHelper;
 import com.arlib.floatingsearchviewdemo.data.Product;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -36,10 +34,8 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,7 +49,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     private FloatingSearchView mSearchView;
 
     private RecyclerView mSearchResultsList;
-    private SearchResultsListAdapter mSearchResultsAdapter;
+
 
     private boolean mIsDarkSearchTheme = false;
 
@@ -99,6 +95,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
        firebaseDatabase = FirebaseDatabase.getInstance().getReference();
 
         setupFloatingSearch();
+        //todo setup result list
         setupResultsList();
         setupDrawer();
     }
@@ -114,7 +111,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
         //limit for saving data in namespace/optimization feature
         int iteratorWordsLimit = FIRST_WORDS_LIMIT;
         while (matcher.find()) {
-            Log.d(TAG, "Add to FB: "+matcher.group());
+           // Log.d(TAG, "Add to FB: "+matcher.group());
             if (iteratorWordsLimit> 0)subTitleList.add(matcher.group().toLowerCase());
             subTitles.put(matcher.group().toLowerCase(), true);
             iteratorWordsLimit--;
@@ -212,13 +209,14 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                     *  Search with user first key word
                     */
                     //query to get product id if user key word exist in firebase
-                    //todo ->12:35 set limit in query
+
                     //todo 2)  Query queryRef = firebaseDatabase
                     Query queryRef = firebaseDatabase
                             .child("product-namespace")
                             .orderByChild("subTitle")
                             .startAt(userKeyWordInput.get(FIRST_KEYWORD))
-                            .endAt(userKeyWordInput.get(FIRST_KEYWORD) + "\uf8ff");
+                            .endAt(userKeyWordInput.get(FIRST_KEYWORD) + "\uf8ff")
+                            .limitToFirst(50);
 
                     queryRef.addValueEventListener(new ValueEventListener() {
                         @Override
@@ -227,7 +225,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                             //put Product objects for showing in result menu
                             showingProductResultList = new ArrayList<>();
 
-                            Log.d(TAG, "From firebase: "+ dataSnapshot.toString());
+                        //    Log.d(TAG, "From firebase: "+ dataSnapshot.toString());
 
                             for (DataSnapshot task : dataSnapshot.getChildren()) {
 
@@ -237,7 +235,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                                 //Some optimization of product queries amount via cashing getting Product in memory
                               List<String> productKeyMap =   checkIfProductExistOptimization((Map<String, Object>) productData.get("productKey"));
 
-                                Log.d(TAG, "productData: "+ productKeyMap.toString() );
+                             //   Log.d(TAG, "productData: "+ productKeyMap.toString() );
 
                                 if(productKeyMap.isEmpty()){mSearchView.swapSuggestions(showingProductResultList); return;}
                                  for (final String productKey: productKeyMap){
@@ -246,13 +244,13 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
                                     //trying to get product object with product key
                                     Query queryRef = firebaseDatabase
-                                            .child("product-indexing").child(productKey);
+                                            .child("product-indexing").child(productKey).orderByChild(productKey);
                                     queryRef.addValueEventListener(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(DataSnapshot dataSnapshot) {
                                             Map<String,Object> productData = (Map<String, Object>) dataSnapshot.getValue();
 
-                                            Log.d(TAG, "From firebase: "+ productData.get("title"));
+                                         //   Log.d(TAG, "From firebase: "+ productData.get("title"));
 
                                             Product p = new Product(
                                                     (String) productData.get("title"),
@@ -295,14 +293,14 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                                 returnProductKeyMap.add(key);
                             for (Product p: productsResultCashOptimization){
                                    if (p.getProductKey().matches(key)) {
-                                       Log.d(TAG, "*+%% @Product in cash "+ p.getProductName());
+                                     //  Log.d(TAG, "*+%% @Product in cash "+ p.getProductName());
                                        showingProductResultList.add(p);
                                        returnProductKeyMap.remove(key);
                                    }
 
                                }
                            }
-                            Log.d(TAG, "```% @List result /afterfilter "+ returnProductKeyMap.toString());
+                          //  Log.d(TAG, "```% @List result /afterfilter "+ returnProductKeyMap.toString());
                             return returnProductKeyMap;
                         }
 
@@ -343,15 +341,8 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
             public void onSuggestionClicked(final SearchSuggestion searchSuggestion) {
 
                 Product colorSuggestion = (Product) searchSuggestion;
-                DataHelper.findColors(getActivity(), colorSuggestion.getBody(),
-                        new DataHelper.OnFindColorsListener() {
 
-                            @Override
-                            public void onResults(List<ColorWrapper> results) {
-                                mSearchResultsAdapter.swapData(results);
-                            }
-
-                        });
+                //todo onSuggestionClicked
                 Log.d(TAG, "onSuggestionClicked()");
 
                 mLastQuery = searchSuggestion.getBody();
@@ -359,9 +350,11 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
             @Override
             public void onSearchAction(String query) {
+
+               //todo from here show search products in List_
                 mLastQuery = query;
 
-                DataHelper.findColors(getActivity(), query,
+                /*DataHelper.findColors(getActivity(), query,
                         new DataHelper.OnFindColorsListener() {
 
                             @Override
@@ -369,7 +362,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                                 mSearchResultsAdapter.swapData(results);
                             }
 
-                        });
+                        });*/
                 Log.d(TAG, "onSearchAction()");
             }
         });
@@ -379,7 +372,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
             public void onFocus() {
 
                 //show suggestions when search bar gains focus (typically history suggestions)
-                mSearchView.swapSuggestions(DataHelper.getHistory(getActivity(), 3));
+               // mSearchView.swapSuggestions(DataHelper.getHistory(getActivity(), 3));
 
                 Log.d(TAG, "onFocus()");
             }
@@ -486,9 +479,9 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     }
 
     private void setupResultsList() {
-        mSearchResultsAdapter = new SearchResultsListAdapter();
-        mSearchResultsList.setAdapter(mSearchResultsAdapter);
-        mSearchResultsList.setLayoutManager(new LinearLayoutManager(getContext()));
+       // mSearchResultsAdapter = new SearchResultsListAdapter();
+       // mSearchResultsList.setAdapter(mSearchResultsAdapter);
+       // mSearchResultsList.setLayoutManager(new LinearLayoutManager(getContext()));
     }
 
     @Override
