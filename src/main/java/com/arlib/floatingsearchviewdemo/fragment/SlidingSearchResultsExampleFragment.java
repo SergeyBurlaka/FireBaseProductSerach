@@ -76,7 +76,9 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         mSearchView = (FloatingSearchView) view.findViewById(R.id.floating_search_view);
+
         mSearchResultsList = (RecyclerView) view.findViewById(R.id.search_results_list);
         productText = (EditText)view.findViewById(R.id.editText_put_product);
 
@@ -225,19 +227,22 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                             //put Product objects for showing in result menu
                             showingProductResultList = new ArrayList<>();
 
-                        //    Log.d(TAG, "From firebase: "+ dataSnapshot.toString());
+                        //  Log.d(TAG, "From firebase: "+ dataSnapshot.toString());
 
                             for (DataSnapshot task : dataSnapshot.getChildren()) {
 
 
                               Map<String,Object> productData = (Map<String, Object>) task.getValue();
 
+                               // Log.d(TAG, "get products : "+ productData );
+
                                 //Some optimization of product queries amount via cashing getting Product in memory
                               List<String> productKeyMap =   checkIfProductExistOptimization((Map<String, Object>) productData.get("productKey"));
 
-                             //   Log.d(TAG, "productData: "+ productKeyMap.toString() );
+                              // Log.d(TAG, "productData keys : "+ productKeyMap.toString() );
 
-                                if(productKeyMap.isEmpty()){mSearchView.swapSuggestions(showingProductResultList); return;}
+                                if(productKeyMap.isEmpty())mSearchView.swapSuggestions(showingProductResultList);
+
                                  for (final String productKey: productKeyMap){
                                     //getting product key as result
                                    // final Map<String, Object> productKey = (Map<String, Object>) productData.get("productKey");
@@ -290,10 +295,12 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
                             }*/
                             for (String key: productKeyMap.keySet() ) {
+
                                 returnProductKeyMap.add(key);
-                            for (Product p: productsResultCashOptimization){
+
+                                for (Product p: productsResultCashOptimization){
                                    if (p.getProductKey().matches(key)) {
-                                     //  Log.d(TAG, "*+%% @Product in cash "+ p.getProductName());
+                                    //  Log.d(TAG, "*+%% @Product in cash "+ p.getProductName());
                                        showingProductResultList.add(p);
                                        returnProductKeyMap.remove(key);
                                    }
