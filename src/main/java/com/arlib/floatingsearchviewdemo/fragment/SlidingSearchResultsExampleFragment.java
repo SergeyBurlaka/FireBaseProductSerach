@@ -4,7 +4,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.util.Log;
@@ -34,8 +33,10 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,7 +44,7 @@ import java.util.regex.Pattern;
 
 public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     private static final int FIRST_KEYWORD = 0 ;
-    private static final int NEXT_KEYWORD_SIZE = 2;
+    private static final int SECOND_KEYWORD_INPUTED = 2;
     private final String TAG = "BlankFragment";
     public static final long FIND_SUGGESTION_SIMULATED_DELAY = 250;
     private FloatingSearchView mSearchView;
@@ -59,9 +60,11 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     private EditText productText;
     private Button addProduct;
 
+
     //TODO_ set to model singleton!!
-    private volatile List <Product> productsResultCashOptimization;
+    private volatile Set<Product> productsResultCashOptimization;
     private volatile List<Product> showingProductResultList;
+
     private Stack<List<Product>> backStackDeltaLastProductResult = new Stack<>();
     private int FIRST_WORDS_LIMIT = 4;
 
@@ -83,7 +86,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
         productText = (EditText)view.findViewById(R.id.editText_put_product);
 
 
-        productsResultCashOptimization = new ArrayList<>();
+        productsResultCashOptimization = new HashSet<>();
 
 
         addProduct = (Button)view.findViewById(R.id.button_add_product);
@@ -168,7 +171,11 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                     // In cause of back one character return
                     // we going also back in stack of products from last filter query using delta product
 
-                    List<Product> productsFromBSback = backStackDeltaLastProductResult.pop();
+                    List<Product> productsFromBSback = new ArrayList<>();
+
+                    if(!backStackDeltaLastProductResult.empty()) productsFromBSback = backStackDeltaLastProductResult.pop();
+
+
                     for (Product product: productsFromBSback){
                          showingProductResultList.add(product );
                     }
@@ -196,14 +203,18 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                     //and put keyword to user keyword list
                     while (matcher.find()) {userKeyWordInput.add(matcher.group().toLowerCase());}
 
-                    //also add dummy in cause of " "
+                    //some workaround if user set " " - add dummy object
                     if (newQuery.substring(newQuery.length() - 1)==" ") backStackDeltaLastProductResult.push(new ArrayList<Product>());
+
                     /*
                     * In cause user next key word input in search view
                     */
-                     if(userKeyWordInput.size() >= NEXT_KEYWORD_SIZE){
+                     if(userKeyWordInput.size() >= SECOND_KEYWORD_INPUTED){
+
                         mSearchView.swapSuggestions(getShowProductListFromCash( oldQuery, newQuery, userKeyWordInput)); return;
                      }
+
+                    if (userKeyWordInput.get(FIRST_KEYWORD).length() <2)return;
 
                     backStackDeltaLastProductResult = new Stack<>();
 
@@ -241,7 +252,9 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
                               // Log.d(TAG, "productData keys : "+ productKeyMap.toString() );
 
-                                if(productKeyMap.isEmpty())mSearchView.swapSuggestions(showingProductResultList);
+                                if(productKeyMap.isEmpty()){
+                                    mSearchView.swapSuggestions(showingProductResultList);
+                                }
 
                                  for (final String productKey: productKeyMap){
                                     //getting product key as result
@@ -267,6 +280,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                                             productsResultCashOptimization.add(p);
 
                                             //add next product to current queries list for showing in result
+
                                             //todo 13:44--> synchronized check if such product exist
                                             showingProductResultList.add(p);
                                             //swap list in result view
