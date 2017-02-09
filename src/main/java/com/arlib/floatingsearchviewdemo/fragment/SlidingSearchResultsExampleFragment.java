@@ -34,6 +34,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +64,8 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
     //TODO_ set to model singleton!!
     private volatile Set<Product> productsResultCashOptimization;
-    private volatile List<Product> showingProductResultList;
+
+
 
     private Stack<List<Product>> backStackDeltaLastProductResult = new Stack<>();
     private int FIRST_WORDS_LIMIT = 4;
@@ -100,12 +102,12 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
        firebaseDatabase = FirebaseDatabase.getInstance().getReference();
 
         setupFloatingSearch();
-        //todo setup result list
+        //todo_ setup result list
         setupResultsList();
         setupDrawer();
     }
 
-    //todo   1)wrightNewPost(String newProductTitle)
+    //todo wrightNewPost(String newProductTitle)
     private void wrightNewPost(String newProductTitle) {
         List <String> subTitleList = new ArrayList<>();
         Map<String,Object> subTitles = new HashMap<>();
@@ -157,35 +159,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
     private void setupFloatingSearch() {
 
         mSearchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
-            /*
-            * In cause user next key word input in search view
-           */
-            public List<? extends SearchSuggestion> getShowProductListFromCash(
-                    String oldQuery, String newQuery, List <String>userKeyWordInput
-            ) {
-                // Check old and new query
-                // returning to last state if old query > new query
-                if (oldQuery.length()>newQuery.length()) {
 
-                    //BACK STACK FEATURE - get products from back stack
-                    // In cause of back one character return
-                    // we going also back in stack of products from last filter query using delta product
-
-                    List<Product> productsFromBSback = new ArrayList<>();
-
-                    if(!backStackDeltaLastProductResult.empty()) productsFromBSback = backStackDeltaLastProductResult.pop();
-
-
-                    for (Product product: productsFromBSback){
-                         showingProductResultList.add(product );
-                    }
-                    return showingProductResultList;
-
-                } else
-                {
-                    return   showingProductResultList = goSearchFilterFromCash(userKeyWordInput);
-                }
-            }
 
             @Override
             public void onSearchTextChanged(String oldQuery, final String newQuery) {
@@ -193,165 +167,132 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
                 if (!oldQuery.equals("") && newQuery.equals("")) {
                     mSearchView.clearSuggestions();
                 } else {
+
                     final List <String> userKeyWordInput = new ArrayList<>();
 
-
-                    //split user phrase into key words
                     Pattern pattern = Pattern.compile("\\w+");
                     Matcher matcher = pattern.matcher(newQuery);
+                    while (matcher.find()) {
+                        userKeyWordInput.add(matcher.group().toLowerCase());
+                    }
 
-                    //and put keyword to user keyword list
-                    while (matcher.find()) {userKeyWordInput.add(matcher.group().toLowerCase());}
+                    if (userKeyWordInput.isEmpty()|| userKeyWordInput.get(FIRST_KEYWORD).length() <2)return;
 
-                    //some workaround if user set " " - add dummy object
-                    if (newQuery.substring(newQuery.length() - 1)==" ") backStackDeltaLastProductResult.push(new ArrayList<Product>());
+                    Iterator iteratorKeyWord = userKeyWordInput.iterator();
+                    List <String> productIDList = new ArrayList<>();
 
-                    /*
-                    * In cause user next key word input in search view
-                    */
-                     if(userKeyWordInput.size() >= SECOND_KEYWORD_INPUTED){
+                    queryListProductId (iteratorKeyWord, productIDList, true);
 
-                        mSearchView.swapSuggestions(getShowProductListFromCash( oldQuery, newQuery, userKeyWordInput)); return;
-                     }
-
-                    if (userKeyWordInput.get(FIRST_KEYWORD).length() <2)return;
-
-                    backStackDeltaLastProductResult = new Stack<>();
-
-                    /*
-                    *  Search with user first key word
-                    */
-                    //query to get product id if user key word exist in firebase
-
-                    //todo 2)  Query queryRef = firebaseDatabase
-                    Query queryRef = firebaseDatabase
-                            .child("product-namespace")
-                            .orderByChild("subTitle")
-                            .startAt(userKeyWordInput.get(FIRST_KEYWORD))
-                            .endAt(userKeyWordInput.get(FIRST_KEYWORD) + "\uf8ff")
-                            .limitToFirst(50);
-
-                    queryRef.addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-
-                            //put Product objects for showing in result menu
-                            showingProductResultList = new ArrayList<>();
-
-                        //  Log.d(TAG, "From firebase: "+ dataSnapshot.toString());
-
-                            for (DataSnapshot task : dataSnapshot.getChildren()) {
-
-
-                              Map<String,Object> productData = (Map<String, Object>) task.getValue();
-
-                               // Log.d(TAG, "get products : "+ productData );
-
-                                //Some optimization of product queries amount via cashing getting Product in memory
-                              List<String> productKeyMap =   checkIfProductExistOptimization((Map<String, Object>) productData.get("productKey"));
-
-                              // Log.d(TAG, "productData keys : "+ productKeyMap.toString() );
-
-                                if(productKeyMap.isEmpty()){
-                                    mSearchView.swapSuggestions(showingProductResultList);
-                                }
-
-                                 for (final String productKey: productKeyMap){
-                                    //getting product key as result
-                                   // final Map<String, Object> productKey = (Map<String, Object>) productData.get("productKey");
-
-                                    //trying to get product object with product key
-                                    Query queryRef = firebaseDatabase
-                                            .child("product-indexing").child(productKey).orderByChild(productKey);
-                                    queryRef.addValueEventListener(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            Map<String,Object> productData = (Map<String, Object>) dataSnapshot.getValue();
-
-                                         //   Log.d(TAG, "From firebase: "+ productData.get("title"));
-
-                                            Product p = new Product(
-                                                    (String) productData.get("title"),
-                                                    productKey,
-                                                    (Map<String, Object>) productData.get("allSubTitles")
-                                            );
-
-                                            //cashing Product object result in base
-                                            productsResultCashOptimization.add(p);
-
-                                            //add next product to current queries list for showing in result
-
-                                            //todo 13:44--> synchronized check if such product exist
-                                            showingProductResultList.add(p);
-                                            //swap list in result view
-                                            mSearchView.swapSuggestions(showingProductResultList);
-
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                                }
-
-                                    /*}else{
-                                        mSearchView.swapSuggestions(showingProductResultList);
-                                    }*/
-                                }
-                            }
-
-                        //synchronized because firebase operations are multithreading
-                        private synchronized List<String>  checkIfProductExistOptimization(Map<String, Object> productKeyMap) {
-                            List <String> returnProductKeyMap = new ArrayList<>();
-
-                            /*for( String keyName : productKeyMap.){
-
-                            }*/
-                            for (String key: productKeyMap.keySet() ) {
-
-                                returnProductKeyMap.add(key);
-
-                                for (Product p: productsResultCashOptimization){
-                                   if (p.getProductKey().matches(key)) {
-                                    //  Log.d(TAG, "*+%% @Product in cash "+ p.getProductName());
-                                       showingProductResultList.add(p);
-                                       returnProductKeyMap.remove(key);
-                                   }
-
-                               }
-                           }
-                          //  Log.d(TAG, "```% @List result /afterfilter "+ returnProductKeyMap.toString());
-                            return returnProductKeyMap;
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            Log.d(TAG, "on cancell");
-                        }
-                    });
                 }
                 Log.d(TAG, "onSearchTextChanged()");
             }
 
-            private List<Product> goSearchFilterFromCash(List<String> filterResult)
-            {
-                List <Product> newShowProductList = new ArrayList<>();
-                List <Product>  productToBackStack = new ArrayList<>();
-                String userKeyWordStr = filterResult.get(filterResult.size()-1 );
+            //todo qreate Object for parmeters like new SearchProductItem ();
+            private void queryListProductId(final Iterator iteratorKeyWord, List<String> productIDList1,  boolean firstIteration) {
+                final boolean isFirst = firstIteration;
+                final List <String> productIDList = productIDList1;
+                final List <String> productIntersectionIDList = new ArrayList<>();
 
-                for (Product product: showingProductResultList ){
-                    if(product.isNameValid(userKeyWordStr)) newShowProductList.add(product);
-                    // or making BACK STACK FEATURE:
-                   //mean, if invalid product - just save it in delta for stack return
-                    else productToBackStack.add(product);
+                final String keyItem = (String) iteratorKeyWord.next();
 
+                getQuery(keyItem).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot task : dataSnapshot.getChildren()) {
+                           List <String> tempProductIDList = parseFirebaseData(task,keyItem );
+
+                            if (productIDList.isEmpty()&& isFirst){
+                                for (String key: tempProductIDList ) {
+                                    productIntersectionIDList.add(key);
+                                }
+                            }else{
+                                for (String key: productIDList) {
+                                    if(tempProductIDList.contains(key)) {
+                                        productIntersectionIDList.add(key);
+                                    }
+                                }
+                            }
+                        }
+
+                        if(iteratorKeyWord.hasNext()){
+                            queryListProductId(iteratorKeyWord,  productIntersectionIDList, false);
+                        }else{
+                            makeQueryProduct( productIntersectionIDList);
+                        }
+                    }
+
+                    private void makeQueryProduct(List<String> productIntersectionIDList) {
+                       final List<Product> showingProductResultList = new ArrayList<>();
+                        if (productIntersectionIDList.isEmpty()){
+                            mSearchView.clearSuggestions();
+                            return;
+                        }
+
+                        for (final String productKey : productIntersectionIDList){
+
+                        Query queryRef = firebaseDatabase
+                                .child("product-indexing").child(productKey).orderByChild(productKey);
+                        queryRef.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                Map<String,Object> productData = (Map<String, Object>) dataSnapshot.getValue();
+                                Product p = new Product(
+                                        (String) productData.get("title"),
+                                        productKey,
+                                        (Map<String, Object>) productData.get("allSubTitles")
+                                );
+
+                                showingProductResultList.add(p);
+                                mSearchView.swapSuggestions(showingProductResultList);
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Log.d(TAG, "on cancell");
+                    }
+                });
+            }
+
+            //todo  Query queryRef = firebaseDatabase
+            public Query getQuery(String keyItem) {
+                return   firebaseDatabase
+                        .child("product-namespace")
+                        .orderByChild("subTitle")
+                        .startAt(keyItem)
+                        .endAt( keyItem + "\uf8ff")
+                        .limitToFirst(50);
+            }
+
+            //todo return ProductSearchObject
+            public List <String> parseFirebaseData(DataSnapshot task, String userKeyWord) {
+
+                Map<String,Object> productData = (Map<String, Object>) task.getValue();
+                List<String> productKeyList = new ArrayList<>();
+
+                String keyName = (String)productData.get("subTitle");
+                if(!isNameValid(userKeyWord,keyName)) return productKeyList;
+
+               Map <String,Object>productKeyMap = (Map<String, Object>) productData.get("productKey");
+                for (String keyProduct: productKeyMap.keySet() ){
+                    productKeyList.add(keyProduct);
                 }
-                // making BACK STACK FEATURE:
-                // Save last state result commit in stack
-                // with delta (equals to invalid product in new query result)
-                backStackDeltaLastProductResult.push(productToBackStack);
-                return newShowProductList;
+                return productKeyList;
+            }
+
+            public boolean isNameValid (String userKeyName, String productKeyName){
+                    if(Pattern.compile(Pattern.quote(userKeyName), Pattern.CASE_INSENSITIVE).matcher(productKeyName).find()){
+                        return true;}
+
+                return false;
             }
         });
 
@@ -363,7 +304,7 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
                 Product colorSuggestion = (Product) searchSuggestion;
 
-                //todo onSuggestionClicked
+                //todo_ onSuggestionClicked
                 Log.d(TAG, "onSuggestionClicked()");
 
                 mLastQuery = searchSuggestion.getBody();
@@ -371,19 +312,8 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
 
             @Override
             public void onSearchAction(String query) {
-
-               //todo from here show search products in List_
+               //todo_ from here show search products in List_
                 mLastQuery = query;
-
-                /*DataHelper.findColors(getActivity(), query,
-                        new DataHelper.OnFindColorsListener() {
-
-                            @Override
-                            public void onResults(List<ColorWrapper> results) {
-                                mSearchResultsAdapter.swapData(results);
-                            }
-
-                        });*/
                 Log.d(TAG, "onSearchAction()");
             }
         });
@@ -391,10 +321,8 @@ public class SlidingSearchResultsExampleFragment extends BaseExampleFragment {
         mSearchView.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
             @Override
             public void onFocus() {
-
                 //show suggestions when search bar gains focus (typically history suggestions)
                // mSearchView.swapSuggestions(DataHelper.getHistory(getActivity(), 3));
-
                 Log.d(TAG, "onFocus()");
             }
 
